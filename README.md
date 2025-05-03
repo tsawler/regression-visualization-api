@@ -197,7 +197,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
@@ -250,7 +250,7 @@ func main() {
 	defer resp.Body.Close()
 
 	// Read and parse the response
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("Error reading response: %v\n", err)
 		return
@@ -277,7 +277,7 @@ func main() {
 	}
 
 	// Save the image to a file
-	err = ioutil.WriteFile("regression_plot.png", imgData, 0644)
+	err = os.WriteFile("regression_plot.png", imgData, 0644)
 	if err != nil {
 		fmt.Printf("Error saving image: %v\n", err)
 		return
