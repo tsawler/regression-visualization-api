@@ -187,6 +187,106 @@ fetch('http://localhost:8000/regression', {
 .catch(error => console.error('Error:', error));
 ```
 
+### Go Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+)
+
+// Request structure that matches the API's expected format
+type RegressionRequest struct {
+	X    [][]float64 `json:"X"`
+	Y    []float64   `json:"y"`
+	Plot string      `json:"plot,omitempty"`
+}
+
+// Response structure for the API's return format
+type RegressionResponse struct {
+	ImageBase64 string `json:"image_base64"`
+	Error       string `json:"error,omitempty"`
+}
+
+func main() {
+	// Create the request payload
+	requestData := RegressionRequest{
+		X: [][]float64{
+			{1}, {2}, {3}, {4}, {5},
+		},
+		Y:    []float64{2, 4, 5, 4, 6},
+		Plot: "2d",
+	}
+
+	// Marshal the request data to JSON
+	jsonData, err := json.Marshal(requestData)
+	if err != nil {
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequest("POST", "http://localhost:8000/regression", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending request: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read and parse the response
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %v\n", err)
+		return
+	}
+
+	var response RegressionResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Printf("Error unmarshaling response: %v\n", err)
+		return
+	}
+
+	// Check for API error
+	if response.Error != "" {
+		fmt.Printf("API returned an error: %s\n", response.Error)
+		return
+	}
+
+	// Decode the base64 image
+	imgData, err := base64.StdEncoding.DecodeString(response.ImageBase64)
+	if err != nil {
+		fmt.Printf("Error decoding base64: %v\n", err)
+		return
+	}
+
+	// Save the image to a file
+	err = ioutil.WriteFile("regression_plot.png", imgData, 0644)
+	if err != nil {
+		fmt.Printf("Error saving image: %v\n", err)
+		return
+	}
+
+	fmt.Println("Regression plot saved as regression_plot.png")
+}
+```
+
 ## Technical Details
 
 The service uses:
@@ -216,4 +316,4 @@ The Docker container exposes port 8000.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
