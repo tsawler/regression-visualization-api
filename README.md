@@ -1,374 +1,316 @@
 # Regression Visualization API
 
-A Flask-based microservice that generates regression visualizations from data. This service is designed to run as a Docker sidecar container and provides regression analysis with both 2D and 3D visualization capabilities.
+A simple yet powerful Flask API for performing linear regression analysis and generating interactive visualizations using Plotly.
 
 ## Features
 
-- Simple HTTP API for regression analysis
-- Generates linear regression models using scikit-learn
-- Supports both 2D and 3D visualizations
-- Customizable plot titles and axis labels
-- Returns base64-encoded PNG images
-- Dockerized for easy deployment and integration
-
-## Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/regression` | POST | Performs linear regression on provided data and returns a visualization as a base64-encoded PNG image |
+- Perform linear regression on your data
+- Generate interactive 2D visualizations for single-feature regression
+- Generate interactive 3D visualizations for two-feature regression
+- Output embeddable HTML for web applications
+- Containerized for easy deployment
 
 ## Installation
 
 ### Prerequisites
 
-- Docker
-- Docker Compose
+- Docker and Docker Compose
+- Git (for cloning the repository)
 
-### Setup
+### Option 1: Using Docker Compose (Recommended)
 
-1. Clone this repository:
+1. Clone the repository:
    ```bash
-   git clone <your-repository-url>
-   cd <repository-directory>
+   git clone https://github.com/yourusername/regression-api.git
+   cd regression-api
    ```
 
-2. Build and start the Docker container:
+2. Start the container:
    ```bash
    docker-compose up -d
    ```
 
-The service will be available at `http://localhost:8000`.
+The API will be accessible at `http://localhost:8000`.
 
-## API Reference
+### Option 2: Manual Installation
 
-### POST /regression
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/regression-api.git
+   cd regression-api
+   ```
 
-Performs linear regression on provided data and returns a visualization.
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-#### Request Body
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-JSON object with the following fields:
+4. Run the application:
+   ```bash
+   python app.py
+   ```
 
-- `X` (required): 2D array for multi-feature regression or 1D array for simple regression
-- `y` (required): 1D array of target values
-- `plot` (optional): String specifying plot type - either `"2d"` (default) or `"3d"`
-- `labels` (optional): Object containing custom labels for the plot:
-  - `title` (optional): Custom title for the plot
-  - `x_label` (optional): Custom label for the X-axis
-  - `y_label` (optional): Custom label for the Y-axis
-  - `z_label` (optional): Custom label for the Z-axis (only used in 3D plots)
+The API will be accessible at `http://localhost:8000`.
 
-#### Sample Request (Simple Linear Regression with Custom Labels)
+## API Endpoints
 
-```json
-{
-  "X": [[1], [2], [3], [4], [5]],
-  "y": [2, 4, 5, 4, 6],
-  "plot": "2d",
-  "labels": {
-    "title": "Sales vs. Advertising",
-    "x_label": "Advertising Budget ($1000s)",
-    "y_label": "Sales Revenue ($10,000s)"
-  }
-}
-```
+### `/regression` [POST]
 
-#### Sample Request (Multiple Linear Regression with 3D Plot and Custom Labels)
+Performs linear regression on input data and returns interactive Plotly visualizations.
+
+**Request Format:**
 
 ```json
 {
-  "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
-  "y": [2, 4, 5, 7, 6],
-  "plot": "3d",
-  "labels": {
-    "title": "Product Sales Model",
-    "x_label": "Price",
-    "y_label": "Marketing",
-    "z_label": "Units Sold"
-  }
+    "X": [[x1_1, x1_2, ...], [x2_1, x2_2, ...], ...],
+    "y": [y1, y2, ...],
+    "plot": "2d" or "3d",  # Optional, defaults to '2d'
+    "labels": {
+        "title": "...",
+        "x_label": "...",
+        "y_label": "...",
+        "z_label": "..."  # Only for 3D
+    }
 }
 ```
 
-#### Response
+> **Note**: The API returns a standard Plotly HTML element with default sizing. To increase the size of the visualization (especially recommended for 3D plots), you can modify the returned HTML by replacing the style attribute as shown in the examples below.
 
-JSON object with:
-- `image_base64`: Base64-encoded PNG image of the regression visualization
-
-#### Sample Response
+**Response Format:**
 
 ```json
 {
-  "image_base64": "iVBORw0KGgoAAAANSUhEUgAA...AASUVORK5CYII="
+    "html": "<!-- Interactive Plotly HTML -->"
 }
 ```
-
-#### Error Response
-
-```json
-{
-  "error": "3D plot requires exactly 2 features (columns) in X"
-}
-```
-
-#### HTTP Status Codes
-
-- `200 OK`: Request successful
-- `400 Bad Request`: When input data is invalid or incompatible with the requested plot type
 
 ## Usage Examples
 
-### Simple Linear Regression (2D) with Custom Labels
+> **Note**: The default plot size may appear small, especially for 3D visualizations. All examples below include code to increase the size of the plots for better viewing.
+
+### Example 1: Simple 2D Regression with CURL
 
 ```bash
 curl -X POST http://localhost:8000/regression \
   -H "Content-Type: application/json" \
   -d '{
     "X": [[1], [2], [3], [4], [5]],
-    "y": [2, 4, 5, 4, 6],
+    "y": [2, 3.9, 6.1, 8, 9.8],
     "plot": "2d",
     "labels": {
-      "title": "Sales vs. Advertising",
-      "x_label": "Advertising Budget ($1000s)",
-      "y_label": "Sales Revenue ($10,000s)"
+      "title": "Simple Linear Regression",
+      "x_label": "Input Feature",
+      "y_label": "Target Value"
     }
   }'
 ```
 
-### Multiple Linear Regression with 2D Visualization
+### Example 2: 3D Regression with CURL
 
 ```bash
 curl -X POST http://localhost:8000/regression \
   -H "Content-Type: application/json" \
   -d '{
-    "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
-    "y": [2, 4, 5, 7, 6],
-    "labels": {
-      "title": "Performance Analysis",
-      "x_label": "Actual Performance",
-      "y_label": "Predicted Performance"
-    }
-  }'
-```
-
-This will produce an "Performance Analysis" plot with custom axis labels since we have multiple features.
-
-### Multiple Linear Regression with 3D Visualization and Custom Labels
-
-```bash
-curl -X POST http://localhost:8000/regression \
-  -H "Content-Type: application/json" \
-  -d '{
-    "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
-    "y": [2, 4, 5, 7, 6],
+    "X": [[1, 2], [2, 3], [3, 5], [4, 2], [5, 1]],
+    "y": [3, 6, 14, 8, 9],
     "plot": "3d",
     "labels": {
-      "title": "Product Sales Model",
-      "x_label": "Price",
-      "y_label": "Marketing",
-      "z_label": "Units Sold"
+      "title": "Multiple Linear Regression",
+      "x_label": "Feature 1",
+      "y_label": "Feature 2",
+      "z_label": "Target Value"
     }
   }'
 ```
 
-## Working with the API Response
-
-The API returns a base64-encoded PNG image. To display or save this image:
-
-### Python Example
+### Example 3: Python Client
 
 ```python
 import requests
-import base64
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import io
+import json
+import numpy as np
+from IPython.display import HTML
 
-response = requests.post(
-    "http://localhost:8000/regression",
-    json={
-        "X": [[1], [2], [3], [4], [5]],
-        "y": [2, 4, 5, 4, 6],
-        "labels": {
-            "title": "Monthly Sales Trend",
-            "x_label": "Month",
-            "y_label": "Sales ($1000s)"
-        }
+# Sample data
+X = np.array([[1, 2], [2, 1], [3, 3], [4, 2], [5, 4]])
+y = np.array([3, 4, 7, 7, 10])
+
+# Prepare request payload
+payload = {
+    "X": X.tolist(),
+    "y": y.tolist(),
+    "plot": "3d",
+    "labels": {
+        "title": "Housing Price Prediction",
+        "x_label": "Size (sq ft)",
+        "y_label": "Age (years)",
+        "z_label": "Price ($)"
     }
+}
+
+# Send request
+response = requests.post(
+    "http://localhost:8000/regression", 
+    json=payload
 )
 
-img_data = base64.b64decode(response.json()['image_base64'])
-img = mpimg.imread(io.BytesIO(img_data))
-plt.imshow(img)
-plt.axis('off')
-plt.show()
+# For a larger plot, you can modify the height and width
+html_content = response.json()["html"]
+# Increase the size - adjust the width and height as needed
+larger_html = html_content.replace('style="height: 100%; width: 100%;"', 
+                                  'style="height: 800px; width: 100%;"')
+
+# Display the visualization (in Jupyter Notebook)
+HTML(larger_html)
+
+# Or save to file
+with open("visualization.html", "w") as f:
+    f.write(larger_html)
 ```
 
-### JavaScript Example
+### Example 4: JavaScript Client
 
 ```javascript
-fetch('http://localhost:8000/regression', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    X: [[1], [2], [3], [4], [5]],
-    y: [2, 4, 5, 4, 6],
-    labels: {
-      title: 'Website Traffic Analysis',
-      x_label: 'Marketing Spend ($1000s)',
-      y_label: 'Visitors (1000s)'
+async function fetchRegression() {
+    const data = {
+        "X": [[1], [2], [3], [4], [5]],
+        "y": [2, 4.1, 5.9, 8.2, 9.9],
+        "plot": "2d",
+        "labels": {
+            "title": "Sales Prediction",
+            "x_label": "Marketing Budget ($K)",
+            "y_label": "Sales ($K)"
+        }
+    };
+
+    try {
+        const response = await fetch('http://localhost:8000/regression', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        // Resize the plot by modifying the HTML
+        const resizedHtml = result.html.replace(
+            'style="height: 100%; width: 100%;"', 
+            'style="height: 600px; width: 100%;"'
+        );
+        
+        // Insert the visualization into a div
+        document.getElementById('visualization').innerHTML = resizedHtml;
+    } catch (error) {
+        console.error('Error:', error);
     }
-  }),
-})
-.then(response => response.json())
-.then(data => {
-  const img = document.createElement('img');
-  img.src = `data:image/png;base64,${data.image_base64}`;
-  document.body.appendChild(img);
-})
-.catch(error => console.error('Error:', error));
+}
+
+// Call the function when needed
+fetchRegression();
 ```
 
-### Go Example
+### Example 5: Go Client
 
 ```go
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "os"
+    "strings"
 )
 
-// Labels structure for custom plot labels
-type Labels struct {
-	Title   string `json:"title,omitempty"`
-	XLabel  string `json:"x_label,omitempty"`
-	YLabel  string `json:"y_label,omitempty"`
-	ZLabel  string `json:"z_label,omitempty"`
-}
-
-// Request structure that matches the API's expected format
 type RegressionRequest struct {
-	X      [][]float64 `json:"X"`
-	Y      []float64   `json:"y"`
-	Plot   string      `json:"plot,omitempty"`
-	Labels *Labels     `json:"labels,omitempty"`
+    X      [][]float64        `json:"X"`
+    Y      []float64          `json:"y"`
+    Plot   string             `json:"plot"`
+    Labels map[string]string  `json:"labels"`
 }
 
-// Response structure for the API's return format
 type RegressionResponse struct {
-	ImageBase64 string `json:"image_base64"`
-	Error       string `json:"error,omitempty"`
+    HTML string `json:"html"`
 }
 
 func main() {
-	// Create the request payload with custom labels
-	requestData := RegressionRequest{
-		X: [][]float64{
-			{1}, {2}, {3}, {4}, {5},
-		},
-		Y:    []float64{2, 4, 5, 4, 6},
-		Plot: "2d",
-		Labels: &Labels{
-			Title:  "Quarterly Revenue Growth",
-			XLabel: "Quarter",
-			YLabel: "Revenue Growth (%)",
-		},
-	}
+    // Sample data
+    data := RegressionRequest{
+        X:    [][]float64{{1}, {2}, {3}, {4}, {5}},
+        Y:    []float64{2, 4, 6, 8, 10},
+        Plot: "2d",
+        Labels: map[string]string{
+            "title":   "Go Client Example",
+            "x_label": "Input",
+            "y_label": "Output",
+        },
+    }
 
-	// Marshal the request data to JSON
-	jsonData, err := json.Marshal(requestData)
-	if err != nil {
-		fmt.Printf("Error marshaling JSON: %v\n", err)
-		return
-	}
+    jsonData, err := json.Marshal(data)
+    if err != nil {
+        fmt.Println("Error marshalling JSON:", err)
+        return
+    }
 
-	// Create the HTTP request
-	req, err := http.NewRequest("POST", "http://localhost:8000/regression", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Printf("Error creating request: %v\n", err)
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
+    resp, err := http.Post(
+        "http://localhost:8000/regression",
+        "application/json",
+        bytes.NewBuffer(jsonData),
+    )
+    if err != nil {
+        fmt.Println("Error sending request:", err)
+        return
+    }
+    defer resp.Body.Close()
 
-	// Send the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Printf("Error sending request: %v\n", err)
-		return
-	}
-	defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println("Error reading response:", err)
+        return
+    }
 
-	// Read and parse the response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading response: %v\n", err)
-		return
-	}
+    var result RegressionResponse
+    if err := json.Unmarshal(body, &result); err != nil {
+        fmt.Println("Error unmarshalling response:", err)
+        return
+    }
 
-	var response RegressionResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Printf("Error unmarshaling response: %v\n", err)
-		return
-	}
+    // Resize the plot for better visualization
+    resizedHTML := strings.Replace(
+        result.HTML,
+        `style="height: 100%; width: 100%;"`,
+        `style="height: 700px; width: 100%;"`,
+        1,
+    )
 
-	// Check for API error
-	if response.Error != "" {
-		fmt.Printf("API returned an error: %s\n", response.Error)
-		return
-	}
+    // Save the visualization to a file
+    if err := ioutil.WriteFile("visualization.html", []byte(resizedHTML), 0644); err != nil {
+        fmt.Println("Error writing HTML to file:", err)
+        return
+    }
 
-	// Decode the base64 image
-	imgData, err := base64.StdEncoding.DecodeString(response.ImageBase64)
-	if err != nil {
-		fmt.Printf("Error decoding base64: %v\n", err)
-		return
-	}
-
-	// Save the image to a file
-	err = os.WriteFile("regression_plot.png", imgData, 0644)
-	if err != nil {
-		fmt.Printf("Error saving image: %v\n", err)
-		return
-	}
-
-	fmt.Println("Regression plot saved as regression_plot.png")
+    fmt.Println("Visualization saved to visualization.html")
 }
 ```
 
-## Technical Details
+## Requirements
 
-The service uses:
-- Flask 3.0.2 for the HTTP API
-- NumPy 2.2.5 for numerical operations
-- Matplotlib 3.10.1 for visualization
-- scikit-learn 1.6.1 for regression models
+The following dependencies are required and will be installed automatically when using Docker or the requirements.txt file:
 
-The Docker container exposes port 8000.
-
-## Limitations
-
-- 3D plots require exactly 2 features (columns) in X
-- No persistent storage of models or results
-- Limited to linear regression models
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port conflicts**: If port 8000 is already in use, modify the `docker-compose.yml` file to use a different port mapping.
-
-2. **Memory issues**: For large datasets, you might need to allocate more memory to Docker.
-
-3. **Image not rendering**: Ensure your client application correctly handles base64-encoded PNG data.
+- Flask
+- NumPy
+- scikit-learn
+- Plotly
 
 ## License
 

@@ -1,150 +1,145 @@
 from flask import Flask, request, jsonify
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-import io
-import base64
+import plotly.graph_objs as go
+import plotly.io as pio
 
 # Initialize the Flask application
 app = Flask(__name__)
 
 
-def encode_image():
-    """
-    Helper function to encode matplotlib figure to base64.
-
-    This converts the current matplotlib plot into a PNG image and encodes it as a base64 string,
-    which can be embedded in HTML or returned in JSON responses.
-
-    Returns:
-        str: Base64 encoded string of the current matplotlib figure
-    """
-    buf = io.BytesIO()  # Create an in-memory binary stream
-    # Save the current figure to the stream as PNG
-    plt.savefig(buf, format='png')
-    plt.close()  # Close the figure to free memory
-    buf.seek(0)  # Rewind to the beginning of the stream
-    # Encode binary data as base64 string
-    return base64.b64encode(buf.read()).decode('utf-8')
-
-
 @app.route('/regression', methods=['POST'])
 def regression():
     """
-    Endpoint to perform linear regression and generate visualizations.
-
-    Accepts JSON data with X (features) and y (target) arrays, plot type, and custom labels.
-    Fits a linear regression model and returns a visualization of the results.
+    Endpoint to perform linear regression and return an interactive Plotly visualization.
 
     Expected JSON format:
     {
-        "X": [[x1_1, x1_2, ...], [x2_1, x2_2, ...], ...],  # 2D array of features
-        "y": [y1, y2, ...],  # 1D array of target values
-        "plot": "2d" or "3d",  # Optional plot type parameter
-        "labels": {  # Optional custom labels
-            "title": "My Custom Plot Title",
-            "x_label": "X Axis Label",
-            "y_label": "Y Axis Label",
-            "z_label": "Z Axis Label"  # Only used for 3D plots
+        "X": [[x1_1, x1_2, ...], [x2_1, x2_2, ...], ...],
+        "y": [y1, y2, ...],
+        "plot": "2d" or "3d",  # Optional, defaults to '2d'
+        "labels": {
+            "title": "...",
+            "x_label": "...",
+            "y_label": "...",
+            "z_label": "..."  # Only for 3D
         }
     }
 
     Returns:
-        JSON response with base64 encoded image of the regression visualization
+        JSON with 'html' key containing interactive Plotly HTML (to embed in frontend).
     """
-    data = request.get_json()  # Parse the JSON request body
-    X = np.array(data['X'])  # Convert X data to NumPy array
-    y = np.array(data['y'])  # Convert y data to NumPy array
-    plot_type = data.get('plot', '2d')  # Get plot type or default to '2d'
+    data = request.get_json()
 
-    # Get custom labels (if provided)
+    X = np.array(data['X'])
+    y = np.array(data['y'])
+    plot_type = data.get('plot', '2d')
+
     labels = data.get('labels', {})
     title = labels.get('title', '')
     x_label = labels.get('x_label', '')
     y_label = labels.get('y_label', '')
     z_label = labels.get('z_label', '')
 
-    # Create and train the linear regression model
     model = LinearRegression()
     model.fit(X, y)
 
     if plot_type == '3d':
-        # Create a 3D visualization for exactly 2 features
         if X.shape[1] != 2:
-            # Return error if X doesn't have exactly 2 columns for 3D plot
             return jsonify({'error': '3D plot requires exactly 2 features (columns) in X'}), 400
 
-        fig = plt.figure()  # Create a new figure
-        ax = fig.add_subplot(111, projection='3d')  # Add a 3D subplot
-        ax.scatter(X[:, 0], X[:, 1], y, color='blue',
-                   label='Actual')  # Plot actual data points
-
-        # Create a mesh grid for the prediction surface
+        # Create surface grid
         x_surf, y_surf = np.meshgrid(
-            # 20 points along X1 range
             np.linspace(X[:, 0].min(), X[:, 0].max(), 20),
-            # 20 points along X2 range
             np.linspace(X[:, 1].min(), X[:, 1].max(), 20)
         )
+        z_surf = model.predict(np.c_[x_surf.ravel(), y_surf.ravel()]).reshape(x_surf.shape)
 
-        # Predict values for all points in the mesh grid and reshape to match grid dimensions
-        z_surf = model.predict(
-            np.c_[x_surf.ravel(), y_surf.ravel()]).reshape(x_surf.shape)
+        # Create 3D scatter and surface plot
+        scatter = go.Scatter3d(
+            x=X[:, 0], y=X[:, 1], z=y,
+            mode='markers',
+            marker=dict(size=4, color='blue'),
+            name='Actual'
+        )
 
-        # Plot the prediction surface
-        ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.5, color='red')
+        surface = go.Surface(
+            x=x_surf, y=y_surf, z=z_surf,
+            opacity=0.5,
+            colorscale='Reds',
+            name='Prediction Surface'
+        )
 
-        # Set custom labels if provided
-        if title:
-            ax.set_title(title)
-        ax.set_xlabel(x_label if x_label else "X1")
-        ax.set_ylabel(y_label if y_label else "X2")
-        ax.set_zlabel(z_label if z_label else "y")
+        layout = go.Layout(
+            title=title or '3D Linear Regression',
+            scene=dict(
+                xaxis_title=x_label or 'X1',
+                yaxis_title=y_label or 'X2',
+                zaxis_title=z_label or 'y'
+            )
+        )
 
-        # Add a legend
-        ax.legend()
+        fig = go.Figure(data=[scatter, surface], layout=layout)
 
     else:
-        # Handle 2D plotting cases
         if X.shape[1] == 1:
-            # Simple linear regression (one feature)
-            # Plot actual data points
-            plt.scatter(X, y, color='blue', label='Actual')
-            plt.plot(X, model.predict(X), color='red',
-                     label='Prediction')  # Plot prediction line
+            # Simple 2D regression
+            x_vals = X.flatten()
+            y_pred = model.predict(X)
 
-            # Set custom labels if provided
-            if title:
-                plt.title(title)
-            plt.xlabel(x_label if x_label else "X")
-            plt.ylabel(y_label if y_label else "y")
+            trace_actual = go.Scatter(
+                x=x_vals, y=y,
+                mode='markers',
+                marker=dict(color='blue'),
+                name='Actual'
+            )
+            trace_pred = go.Scatter(
+                x=x_vals, y=y_pred,
+                mode='lines',
+                line=dict(color='red'),
+                name='Prediction'
+            )
 
-            # Add a legend
-            plt.legend()
+            layout = go.Layout(
+                title=title or '2D Linear Regression',
+                xaxis=dict(title=x_label or 'X'),
+                yaxis=dict(title=y_label or 'y')
+            )
+
+            fig = go.Figure(data=[trace_actual, trace_pred], layout=layout)
 
         else:
-            # Multiple regression (more than one feature)
-            # Plot predicted vs actual values to visualize model performance
+            # Multi-feature regression: actual vs predicted
             y_pred = model.predict(X)
-            # Actual vs Predicted scatter plot
-            plt.scatter(y, y_pred, color='green')
-            plt.plot([y.min(), y.max()], [y.min(), y.max()],
-                     'k--', lw=2)  # Perfect prediction line
 
-            # Set custom labels if provided
-            if title:
-                plt.title(title if title else "Actual vs Predicted")
-            plt.xlabel(x_label if x_label else "Actual y")
-            plt.ylabel(y_label if y_label else "Predicted y")
+            trace = go.Scatter(
+                x=y, y=y_pred,
+                mode='markers',
+                marker=dict(color='green'),
+                name='Actual vs Predicted'
+            )
 
-    # Convert the plot to base64 encoded image
-    image_base64 = encode_image()
+            line = go.Scatter(
+                x=[y.min(), y.max()], y=[y.min(), y.max()],
+                mode='lines',
+                line=dict(dash='dash', color='black'),
+                name='Perfect Prediction'
+            )
 
-    # Return the encoded image in the JSON response
-    return jsonify({'image_base64': image_base64})
+            layout = go.Layout(
+                title=title or 'Actual vs Predicted',
+                xaxis=dict(title=x_label or 'Actual y'),
+                yaxis=dict(title=y_label or 'Predicted y')
+            )
+
+            fig = go.Figure(data=[trace, line], layout=layout)
+
+    # Convert to interactive HTML snippet (can be embedded in frontend)
+    html = pio.to_html(fig, full_html=False)
+
+    return jsonify({'html': html})
 
 
 # Run the application if this file is executed directly
 if __name__ == '__main__':
-    # Start server on all network interfaces (0.0.0.0) on port 8000
     app.run(host='0.0.0.0', port=8000)
