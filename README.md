@@ -7,6 +7,7 @@ A Flask-based microservice that generates regression visualizations from data. T
 - Simple HTTP API for regression analysis
 - Generates linear regression models using scikit-learn
 - Supports both 2D and 3D visualizations
+- Customizable plot titles and axis labels
 - Returns base64-encoded PNG images
 - Dockerized for easy deployment and integration
 
@@ -51,24 +52,40 @@ JSON object with the following fields:
 - `X` (required): 2D array for multi-feature regression or 1D array for simple regression
 - `y` (required): 1D array of target values
 - `plot` (optional): String specifying plot type - either `"2d"` (default) or `"3d"`
+- `labels` (optional): Object containing custom labels for the plot:
+  - `title` (optional): Custom title for the plot
+  - `x_label` (optional): Custom label for the X-axis
+  - `y_label` (optional): Custom label for the Y-axis
+  - `z_label` (optional): Custom label for the Z-axis (only used in 3D plots)
 
-#### Sample Request (Simple Linear Regression)
+#### Sample Request (Simple Linear Regression with Custom Labels)
 
 ```json
 {
   "X": [[1], [2], [3], [4], [5]],
   "y": [2, 4, 5, 4, 6],
-  "plot": "2d"
+  "plot": "2d",
+  "labels": {
+    "title": "Sales vs. Advertising",
+    "x_label": "Advertising Budget ($1000s)",
+    "y_label": "Sales Revenue ($10,000s)"
+  }
 }
 ```
 
-#### Sample Request (Multiple Linear Regression with 3D Plot)
+#### Sample Request (Multiple Linear Regression with 3D Plot and Custom Labels)
 
 ```json
 {
   "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
   "y": [2, 4, 5, 7, 6],
-  "plot": "3d"
+  "plot": "3d",
+  "labels": {
+    "title": "Product Sales Model",
+    "x_label": "Price",
+    "y_label": "Marketing",
+    "z_label": "Units Sold"
+  }
 }
 ```
 
@@ -100,7 +117,7 @@ JSON object with:
 
 ## Usage Examples
 
-### Simple Linear Regression (2D)
+### Simple Linear Regression (2D) with Custom Labels
 
 ```bash
 curl -X POST http://localhost:8000/regression \
@@ -108,7 +125,12 @@ curl -X POST http://localhost:8000/regression \
   -d '{
     "X": [[1], [2], [3], [4], [5]],
     "y": [2, 4, 5, 4, 6],
-    "plot": "2d"
+    "plot": "2d",
+    "labels": {
+      "title": "Sales vs. Advertising",
+      "x_label": "Advertising Budget ($1000s)",
+      "y_label": "Sales Revenue ($10,000s)"
+    }
   }'
 ```
 
@@ -119,13 +141,18 @@ curl -X POST http://localhost:8000/regression \
   -H "Content-Type: application/json" \
   -d '{
     "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
-    "y": [2, 4, 5, 7, 6]
+    "y": [2, 4, 5, 7, 6],
+    "labels": {
+      "title": "Performance Analysis",
+      "x_label": "Actual Performance",
+      "y_label": "Predicted Performance"
+    }
   }'
 ```
 
-This will produce an "Actual vs Predicted" plot since we have multiple features.
+This will produce an "Performance Analysis" plot with custom axis labels since we have multiple features.
 
-### Multiple Linear Regression with 3D Visualization
+### Multiple Linear Regression with 3D Visualization and Custom Labels
 
 ```bash
 curl -X POST http://localhost:8000/regression \
@@ -133,7 +160,13 @@ curl -X POST http://localhost:8000/regression \
   -d '{
     "X": [[1, 1], [2, 2], [3, 3], [4, 5], [5, 4]],
     "y": [2, 4, 5, 7, 6],
-    "plot": "3d"
+    "plot": "3d",
+    "labels": {
+      "title": "Product Sales Model",
+      "x_label": "Price",
+      "y_label": "Marketing",
+      "z_label": "Units Sold"
+    }
   }'
 ```
 
@@ -154,7 +187,12 @@ response = requests.post(
     "http://localhost:8000/regression",
     json={
         "X": [[1], [2], [3], [4], [5]],
-        "y": [2, 4, 5, 4, 6]
+        "y": [2, 4, 5, 4, 6],
+        "labels": {
+            "title": "Monthly Sales Trend",
+            "x_label": "Month",
+            "y_label": "Sales ($1000s)"
+        }
     }
 )
 
@@ -175,7 +213,12 @@ fetch('http://localhost:8000/regression', {
   },
   body: JSON.stringify({
     X: [[1], [2], [3], [4], [5]],
-    y: [2, 4, 5, 4, 6]
+    y: [2, 4, 5, 4, 6],
+    labels: {
+      title: 'Website Traffic Analysis',
+      x_label: 'Marketing Spend ($1000s)',
+      y_label: 'Visitors (1000s)'
+    }
   }),
 })
 .then(response => response.json())
@@ -202,11 +245,20 @@ import (
 	"os"
 )
 
+// Labels structure for custom plot labels
+type Labels struct {
+	Title   string `json:"title,omitempty"`
+	XLabel  string `json:"x_label,omitempty"`
+	YLabel  string `json:"y_label,omitempty"`
+	ZLabel  string `json:"z_label,omitempty"`
+}
+
 // Request structure that matches the API's expected format
 type RegressionRequest struct {
-	X    [][]float64 `json:"X"`
-	Y    []float64   `json:"y"`
-	Plot string      `json:"plot,omitempty"`
+	X      [][]float64 `json:"X"`
+	Y      []float64   `json:"y"`
+	Plot   string      `json:"plot,omitempty"`
+	Labels *Labels     `json:"labels,omitempty"`
 }
 
 // Response structure for the API's return format
@@ -216,13 +268,18 @@ type RegressionResponse struct {
 }
 
 func main() {
-	// Create the request payload
+	// Create the request payload with custom labels
 	requestData := RegressionRequest{
 		X: [][]float64{
 			{1}, {2}, {3}, {4}, {5},
 		},
 		Y:    []float64{2, 4, 5, 4, 6},
 		Plot: "2d",
+		Labels: &Labels{
+			Title:  "Quarterly Revenue Growth",
+			XLabel: "Quarter",
+			YLabel: "Revenue Growth (%)",
+		},
 	}
 
 	// Marshal the request data to JSON
@@ -302,7 +359,6 @@ The Docker container exposes port 8000.
 - 3D plots require exactly 2 features (columns) in X
 - No persistent storage of models or results
 - Limited to linear regression models
-- No custom styling options for visualizations
 
 ## Troubleshooting
 

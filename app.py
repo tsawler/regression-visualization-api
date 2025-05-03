@@ -33,14 +33,20 @@ def regression():
     """
     Endpoint to perform linear regression and generate visualizations.
 
-    Accepts JSON data with X (features) and y (target) arrays, and optional plot type.
+    Accepts JSON data with X (features) and y (target) arrays, plot type, and custom labels.
     Fits a linear regression model and returns a visualization of the results.
 
     Expected JSON format:
     {
         "X": [[x1_1, x1_2, ...], [x2_1, x2_2, ...], ...],  # 2D array of features
         "y": [y1, y2, ...],  # 1D array of target values
-        "plot": "2d" or "3d"  # Optional plot type parameter
+        "plot": "2d" or "3d",  # Optional plot type parameter
+        "labels": {  # Optional custom labels
+            "title": "My Custom Plot Title",
+            "x_label": "X Axis Label",
+            "y_label": "Y Axis Label",
+            "z_label": "Z Axis Label"  # Only used for 3D plots
+        }
     }
 
     Returns:
@@ -50,6 +56,13 @@ def regression():
     X = np.array(data['X'])  # Convert X data to NumPy array
     y = np.array(data['y'])  # Convert y data to NumPy array
     plot_type = data.get('plot', '2d')  # Get plot type or default to '2d'
+
+    # Get custom labels (if provided)
+    labels = data.get('labels', {})
+    title = labels.get('title', '')
+    x_label = labels.get('x_label', '')
+    y_label = labels.get('y_label', '')
+    z_label = labels.get('z_label', '')
 
     # Create and train the linear regression model
     model = LinearRegression()
@@ -81,10 +94,16 @@ def regression():
         # Plot the prediction surface
         ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.5, color='red')
 
-        # Label the axes
-        ax.set_xlabel("X1")
-        ax.set_ylabel("X2")
-        ax.set_zlabel("y")
+        # Set custom labels if provided
+        if title:
+            ax.set_title(title)
+        ax.set_xlabel(x_label if x_label else "X1")
+        ax.set_ylabel(y_label if y_label else "X2")
+        ax.set_zlabel(z_label if z_label else "y")
+
+        # Add a legend
+        ax.legend()
+
     else:
         # Handle 2D plotting cases
         if X.shape[1] == 1:
@@ -93,8 +112,16 @@ def regression():
             plt.scatter(X, y, color='blue', label='Actual')
             plt.plot(X, model.predict(X), color='red',
                      label='Prediction')  # Plot prediction line
-            plt.xlabel("X")
-            plt.ylabel("y")
+
+            # Set custom labels if provided
+            if title:
+                plt.title(title)
+            plt.xlabel(x_label if x_label else "X")
+            plt.ylabel(y_label if y_label else "y")
+
+            # Add a legend
+            plt.legend()
+
         else:
             # Multiple regression (more than one feature)
             # Plot predicted vs actual values to visualize model performance
@@ -103,9 +130,12 @@ def regression():
             plt.scatter(y, y_pred, color='green')
             plt.plot([y.min(), y.max()], [y.min(), y.max()],
                      'k--', lw=2)  # Perfect prediction line
-            plt.xlabel("Actual y")
-            plt.ylabel("Predicted y")
-            plt.title("Actual vs Predicted")
+
+            # Set custom labels if provided
+            if title:
+                plt.title(title if title else "Actual vs Predicted")
+            plt.xlabel(x_label if x_label else "Actual y")
+            plt.ylabel(y_label if y_label else "Predicted y")
 
     # Convert the plot to base64 encoded image
     image_base64 = encode_image()
