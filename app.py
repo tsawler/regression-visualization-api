@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 import numpy as np
 from sklearn.linear_model import LinearRegression
-import plotly.graph_objs as go
 import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -255,4 +259,13 @@ def regression():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # Check environment to determine server mode
+    env = os.getenv('FLASK_ENV', 'development')
+    
+    if env == 'production':
+        # In production, use gunicorn (this code won't actually run as gunicorn will be started separately)
+        print("Running in production mode - use gunicorn")
+    else:
+        # In development, use Flask's built-in server
+        print(f"Running in {env} mode - using Flask's built-in server")
+        app.run(host='0.0.0.0', port=8000, debug=True)

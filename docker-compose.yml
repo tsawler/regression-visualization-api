@@ -1,8 +1,10 @@
 services:
-  regression-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  web:
+    build: .
     ports:
       - "8000:8000"
-    container_name: regression-api
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-development}
+    command: ${FLASK_CMD:-python app.py}
