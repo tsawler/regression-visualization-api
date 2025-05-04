@@ -15,13 +15,15 @@ This project provides a simple HTTP API that performs linear regression on provi
 - **Interactive Visualizations** - Fully interactive Plotly graphs with zoom, pan and rotation capabilities
 - **Responsive Design** - Plots resize to fit the viewing window
 - **Docker Support** - Easy deployment using Docker and Docker Compose
+- **Development/Production Modes** - Switch between Flask's built-in server (dev) and Gunicorn (prod)
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.8 or higher
-- Docker and Docker Compose (optional for containerized deployment)
+- Docker and Docker Compose (for containerized deployment)
+- Task (optional, for running commands easily)
 
 ### Method 1: Direct Installation
 
@@ -44,7 +46,11 @@ This project provides a simple HTTP API that performs linear regression on provi
 
 4. Run the application:
    ```bash
+   # Development mode (Flask's built-in server)
    python app.py
+   
+   # Production mode (Gunicorn)
+   gunicorn --bind 0.0.0.0:8000 app:app
    ```
 
 The API will be available at `http://localhost:8000`.
@@ -57,12 +63,43 @@ The API will be available at `http://localhost:8000`.
    cd regression-analysis-api
    ```
 
-2. Build and start the Docker container:
+2. Install Task (optional but recommended):
    ```bash
-   docker-compose up -d
+   # For example, using the install script
+   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+   ```
+
+3. Run the application:
+   ```bash
+   # Using Task (if installed)
+   # Development mode (Flask's built-in server)
+   task dev
+   
+   # Production mode (Gunicorn)
+   task prod
+   
+   # OR using Docker Compose directly
+   # Development mode
+   FLASK_ENV=development FLASK_CMD="python app.py" docker-compose up --build
+   
+   # Production mode
+   FLASK_ENV=production FLASK_CMD="gunicorn --bind 0.0.0.0:8000 app:app --workers=4" docker-compose up --build
    ```
 
 The API will be available at `http://localhost:8000`.
+
+## Project Structure
+
+```
+regression-analysis-api/
+├── app.py                  # Main Flask application
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose configuration
+├── Taskfile.yml            # Task runner configuration
+├── .env.example            # Example environment variables for development
+└── .env.production         # Production environment variables
+```
 
 ## API Usage
 
@@ -270,7 +307,6 @@ Built with:
 - [NumPy](https://numpy.org/) - Numerical computing
 - [scikit-learn](https://scikit-learn.org/) - Machine learning tools
 - [Plotly](https://plotly.com/) - Interactive visualizations
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- [Gunicorn](https://gunicorn.org/) - WSGI HTTP Server for production
+- [Docker](https://www.docker.com/) - Containerization platform
+- [Task](https://taskfile.dev/) - Task runner
