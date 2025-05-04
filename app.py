@@ -15,8 +15,7 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def regression():
     """
-    Endpoint to perform linear regression and return a complete interactive Plotly HTML page
-    with Bootstrap 5 styling.
+    Endpoint to perform linear regression and return a complete interactive Plotly HTML page.
     """
     data = request.get_json()
 
