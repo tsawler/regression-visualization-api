@@ -109,8 +109,8 @@ The API exposes a single endpoint at the root path (`/`) that accepts POST reque
 
 ```json
 {
-  "X": [[x1], [x2]],
-  "y": [y1, y2],
+  "X": [["x1"], ["x2"]],
+  "y": ["y1", "y2"],
   "plot": "2d",
   "labels": {
     "title": "My Regression Analysis",
