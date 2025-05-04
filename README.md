@@ -109,8 +109,8 @@ The API exposes a single endpoint at the root path (`/`) that accepts POST reque
 
 ```json
 {
-  "X": [[x1], [x2], ...],
-  "y": [y1, y2, ...],
+  "X": [[x1], [x2]],
+  "y": [y1, y2],
   "plot": "2d",
   "labels": {
     "title": "My Regression Analysis",
@@ -169,6 +169,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 )
 
@@ -299,7 +300,7 @@ func saveHTML(filename string, html string) error {
 
 // openBrowser opens the specified HTML file in the default browser
 func openBrowser(htmlFile string) {
-	// Get the absolute file path
+	// Get the absolute file path with proper URL formatting
 	absPath, err := getAbsolutePath(htmlFile)
 	if err != nil {
 		fmt.Printf("Error getting absolute path: %v\n", err)
@@ -328,43 +329,18 @@ func openBrowser(htmlFile string) {
 	}
 }
 
-// getAbsolutePath returns the absolute path of a file
+// getAbsolutePath returns the absolute path of a file with proper URL path formatting
 func getAbsolutePath(filePath string) (string, error) {
-	// Check if the path is already absolute
-	if !isAbsolutePath(filePath) {
-		// Get the current working directory
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		// Join the current directory with the file path
-		filePath = cwd + string(os.PathSeparator) + filePath
+	// Convert to absolute path using filepath package
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", err
 	}
-
-	// Replace backslashes with forward slashes for URL format if on Windows
-	if runtime.GOOS == "windows" {
-		filePath = replaceBackslashes(filePath)
-	}
-
-	return filePath, nil
-}
-
-// isAbsolutePath checks if the given path is absolute
-func isAbsolutePath(path string) bool {
-	return len(path) > 0 && (path[0] == '/' || (runtime.GOOS == "windows" && len(path) > 1 && path[1] == ':'))
-}
-
-// replaceBackslashes replaces backslashes with forward slashes for Windows paths
-func replaceBackslashes(path string) string {
-	result := ""
-	for _, c := range path {
-		if c == '\\' {
-			result += "/"
-		} else {
-			result += string(c)
-		}
-	}
-	return result
+	
+	// Convert to forward slashes for URL format regardless of OS
+	urlPath := filepath.ToSlash(absPath)
+	
+	return urlPath, nil
 }
 ```
 
