@@ -164,16 +164,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"math/rand/v2"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 )
 
 type RegressionRequest struct {
-	X      [][]float64          `json:"X"`
-	Y      []float64            `json:"y"`
-	Plot   string               `json:"plot,omitempty"`
-	Labels map[string]string    `json:"labels,omitempty"`
+	X      [][]float64            `json:"X"`
+	Y      []float64              `json:"y"`
+	Plot   string                 `json:"plot,omitempty"`
+	Labels map[string]string      `json:"labels,omitempty"`
 	Layout map[string]interface{} `json:"layout,omitempty"`
 }
 
@@ -186,12 +189,11 @@ func main() {
 
 	// Example 1: 2D Regression
 	fmt.Println("Generating 2D Regression Plot...")
-	
 	request2D := RegressionRequest{
 		X: [][]float64{
 			{1.0}, {2.0}, {3.0}, {4.0}, {5.0}, {6.0}, {7.0}, {8.0}, {9.0}, {10.0},
 		},
-		Y: []float64{2.0, 4.1, 6.3, 8.0, 9.8, 11.9, 14.1, 16.0, 18.2, 20.1},
+		Y:    []float64{2.0, 4.1, 6.3, 8.0, 9.8, 11.9, 14.1, 16.0, 18.2, 20.1},
 		Plot: "2d",
 		Labels: map[string]string{
 			"title":   "Linear Relationship Example",
@@ -199,34 +201,35 @@ func main() {
 			"y_label": "Target Value",
 		},
 	}
-	
+
 	html2D := makeRegressionRequest(baseURL, request2D)
-	err := saveHTML("regression_2d.html", html2D)
+	filePath2D := "regression_2d.html"
+	err := saveHTML(filePath2D, html2D)
 	if err != nil {
 		fmt.Printf("Error saving 2D HTML: %v\n", err)
 	} else {
-		fmt.Println("2D regression plot saved to regression_2d.html")
+		fmt.Println("2D regression plot saved to", filePath2D)
+		// Open the HTML file in the browser
+		openBrowser(filePath2D)
 	}
 
 	// Example 2: 3D Regression
 	fmt.Println("\nGenerating 3D Regression Plot...")
-	
 	// Create some sample 3D data with two features
 	var x3D [][]float64
 	var y3D []float64
-	
+
 	// Generate synthetic data where z ≈ 2x + 3y + random noise
 	for x := 0.0; x <= 10.0; x += 1.0 {
 		for y := 0.0; y <= 10.0; y += 1.0 {
 			// Add some random noise to make it interesting
 			noise := -0.5 + rand.Float64() // Random value between -0.5 and 0.5
 			z := 2*x + 3*y + noise
-			
 			x3D = append(x3D, []float64{x, y})
 			y3D = append(y3D, z)
 		}
 	}
-	
+
 	request3D := RegressionRequest{
 		X:    x3D,
 		Y:    y3D,
@@ -239,16 +242,19 @@ func main() {
 		},
 		Layout: map[string]interface{}{
 			"height": 800,
-			"width": 1000,
+			"width":  1000,
 		},
 	}
-	
+
 	html3D := makeRegressionRequest(baseURL, request3D)
-	err = saveHTML("regression_3d.html", html3D)
+	filePath3D := "regression_3d.html"
+	err = saveHTML(filePath3D, html3D)
 	if err != nil {
 		fmt.Printf("Error saving 3D HTML: %v\n", err)
 	} else {
-		fmt.Println("3D regression plot saved to regression_3d.html")
+		fmt.Println("3D regression plot saved to", filePath3D)
+		// Open the HTML file in the browser
+		openBrowser(filePath3D)
 	}
 }
 
@@ -266,7 +272,7 @@ func makeRegressionRequest(baseURL string, request RegressionRequest) string {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("Error reading response: %v\n", err)
 		return ""
@@ -288,7 +294,77 @@ func makeRegressionRequest(baseURL string, request RegressionRequest) string {
 }
 
 func saveHTML(filename string, html string) error {
-	return ioutil.WriteFile(filename, []byte(html), 0644)
+	return os.WriteFile(filename, []byte(html), 0644)
+}
+
+// openBrowser opens the specified HTML file in the default browser
+func openBrowser(htmlFile string) {
+	// Get the absolute file path
+	absPath, err := getAbsolutePath(htmlFile)
+	if err != nil {
+		fmt.Printf("Error getting absolute path: %v\n", err)
+		return
+	}
+
+	// Convert the file path to a URL format
+	fileURL := "file://" + absPath
+
+	fmt.Printf("Opening %s in browser\n", fileURL)
+
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", fileURL)
+	case "darwin": // macOS
+		cmd = exec.Command("open", fileURL)
+	default: // Linux and others
+		cmd = exec.Command("xdg-open", fileURL)
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		fmt.Printf("Error opening browser: %v\n", err)
+	}
+}
+
+// getAbsolutePath returns the absolute path of a file
+func getAbsolutePath(filePath string) (string, error) {
+	// Check if the path is already absolute
+	if !isAbsolutePath(filePath) {
+		// Get the current working directory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		// Join the current directory with the file path
+		filePath = cwd + string(os.PathSeparator) + filePath
+	}
+
+	// Replace backslashes with forward slashes for URL format if on Windows
+	if runtime.GOOS == "windows" {
+		filePath = replaceBackslashes(filePath)
+	}
+
+	return filePath, nil
+}
+
+// isAbsolutePath checks if the given path is absolute
+func isAbsolutePath(path string) bool {
+	return len(path) > 0 && (path[0] == '/' || (runtime.GOOS == "windows" && len(path) > 1 && path[1] == ':'))
+}
+
+// replaceBackslashes replaces backslashes with forward slashes for Windows paths
+func replaceBackslashes(path string) string {
+	result := ""
+	for _, c := range path {
+		if c == '\\' {
+			result += "/"
+		} else {
+			result += string(c)
+		}
+	}
+	return result
 }
 ```
 
