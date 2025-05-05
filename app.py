@@ -34,11 +34,25 @@ def regression():
         "height": 800,
         "width": 1000,
         "autosize": True,
-        "margin": {"l": 80, "r": 80, "b": 80, "t": 100, "pad": 4}
+        # Increased margins for axis labels
+        "margin": {"l": 120, "r": 80, "b": 120, "t": 100, "pad": 10}
     }
 
     # Extract custom layout settings if provided, otherwise use defaults
     custom_layout = data.get('layout', default_layout)
+
+    # Ensure minimum margin sizes for visibility of axis labels
+    if 'margin' not in custom_layout:
+        custom_layout['margin'] = default_layout['margin']
+    else:
+        # Ensure minimum margins for axis labels
+        margin = custom_layout['margin']
+        if 'l' not in margin or margin['l'] < 120:
+            margin['l'] = 120
+        if 'b' not in margin or margin['b'] < 120:
+            margin['b'] = 120
+        if 'pad' not in margin:
+            margin['pad'] = 10
 
     # Ensure minimum size for visibility
     if 'height' not in custom_layout:
@@ -94,18 +108,30 @@ def regression():
         }
         plot_data.append(surface_data)
 
-        # Layout for 3D plot - FIXED TO USE CUSTOM LAYOUT VALUES
+        # Layout for 3D plot with improved axis settings - updated for Plotly.js 3.0+
         layout_obj = {
-            'title': title or '3D Linear Regression',
+            'title': {'text': title or '3D Linear Regression'},
             'scene': {
-                'xaxis': {'title': x_label or 'Feature 1'},
-                'yaxis': {'title': y_label or 'Feature 2'},
-                'zaxis': {'title': z_label or 'Target'}
+                'xaxis': {
+                    'title': {'text': x_label or 'Feature 1', 'font': {'size': 16}},
+                    'showgrid': True,
+                    'showline': True
+                },
+                'yaxis': {
+                    'title': {'text': y_label or 'Feature 2', 'font': {'size': 16}},
+                    'showgrid': True,
+                    'showline': True
+                },
+                'zaxis': {
+                    'title': {'text': z_label or 'Target', 'font': {'size': 16}},
+                    'showgrid': True,
+                    'showline': True
+                }
             },
             'height': custom_layout.get('height', 800),
             'width': custom_layout.get('width', 1000),
             'autosize': custom_layout.get('autosize', True),
-            'margin': custom_layout.get('margin', {'l': 0, 'r': 0, 'b': 0, 't': 50})
+            'margin': custom_layout.get('margin', {'l': 120, 'r': 80, 'b': 120, 't': 100, 'pad': 10})
         }
 
     else:
@@ -135,14 +161,25 @@ def regression():
             }
             plot_data.append(pred_data)
 
+            # Improved 2D layout with better axis visibility - updated for Plotly.js 3.0+
             layout_obj = {
-                'title': title or '2D Linear Regression',
-                'xaxis': {'title': x_label or 'X'},
-                'yaxis': {'title': y_label or 'y'},
+                'title': {'text': title or '2D Linear Regression'},
+                'xaxis': {
+                    'title': {'text': x_label or 'X', 'font': {'size': 18}},
+                    'showgrid': True,
+                    'showline': True,
+                    'tickfont': {'size': 14}
+                },
+                'yaxis': {
+                    'title': {'text': y_label or 'y', 'font': {'size': 18}},
+                    'showgrid': True,
+                    'showline': True,
+                    'tickfont': {'size': 14}
+                },
                 'height': custom_layout.get('height', 800),
                 'width': custom_layout.get('width', 1000),
                 'autosize': custom_layout.get('autosize', True),
-                'margin': custom_layout.get('margin', {'l': 80, 'r': 80, 'b': 80, 't': 100})
+                'margin': custom_layout.get('margin', {'l': 120, 'r': 80, 'b': 120, 't': 100, 'pad': 10})
             }
         else:
             # For multi-feature regression: actual vs predicted
@@ -171,82 +208,110 @@ def regression():
             }
             plot_data.append(line_data)
 
+            # Corrected layout for actual vs predicted - updated for Plotly.js 3.0+
             layout_obj = {
-                'title': title or 'Actual vs Predicted',
-                'xaxis': {'title': x_label or 'Actual y'},
-                'yaxis': {'title': y_label or 'Predicted y'},
+                'title': {'text': title or 'Actual vs Predicted'},
+                'xaxis': {
+                    'title': {'text': x_label or 'Actual y', 'font': {'size': 18}},
+                    'showgrid': True,
+                    'showline': True,
+                    'tickfont': {'size': 14}
+                },
+                'yaxis': {
+                    'title': {'text': y_label or 'Predicted y', 'font': {'size': 18}},
+                    'showgrid': True,
+                    'showline': True,
+                    'tickfont': {'size': 14}
+                },
                 'height': custom_layout.get('height', 800),
                 'width': custom_layout.get('width', 1000),
                 'autosize': custom_layout.get('autosize', True),
-                'margin': custom_layout.get('margin', {'l': 80, 'r': 80, 'b': 80, 't': 100})
+                'margin': custom_layout.get('margin', {'l': 120, 'r': 80, 'b': 120, 't': 100, 'pad': 10})
             }
 
     # Convert the data to JSON
     plot_data_json = json.dumps(plot_data)
     layout_json = json.dumps(layout_obj)
 
-    # Create a complete standalone HTML page with Bootstrap 5 styling
+    # Create a complete standalone HTML page with additional styling for better visibility
     html = f'''
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title or 'Regression Analysis'}</title>
+    <title>Regression Analysis</title>
     <!-- Plotly JS -->
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     <style>
         body {{
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
         }}
         .container {{
-            width: 100%;
+            width: 95%;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 1rem;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
         }}
-        .title {{
+        .plot-title {{
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
         }}
         .plot-container {{
-            height: {custom_layout.get('height')}px;
-            min-height: 600px;
+            height: 700px;
             width: 100%;
         }}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="title">{title or 'Regression Analysis'}</h1>
+        <h1 class="plot-title">Linear Regression Analysis</h1>
         <div id="plot" class="plot-container"></div>
     </div>
     
     <script>
-        // Define the data
-        const data = {plot_data_json};
-        
-        // Define the layout with responsive settings
-        const layout = {layout_json};
-        layout.autosize = true;
-        
-        // Create the plot with modebar always visible
-        document.addEventListener('DOMContentLoaded', function() {{
+        window.onload = function() {{
+            // Define the data
+            const data = {plot_data_json};
+            
+            // Define the layout with responsive settings
+            let layout = {layout_json};
+            
+            // Ensure margins are sufficient for axis labels
+            if (!layout.margin) {{
+                layout.margin = {{l: 120, r: 80, b: 120, t: 100, pad: 10}};
+            }}
+            
+            // Ensure automargin is enabled for axis titles
+            if (layout.xaxis) {{
+                layout.xaxis.automargin = true;
+            }}
+            if (layout.yaxis) {{
+                layout.yaxis.automargin = true;
+            }}
+            
+            // Create the plot with modebar always visible
             Plotly.newPlot('plot', data, layout, {{
                 responsive: true,
                 displayModeBar: true,
                 displaylogo: false
             }});
-            
+                
             // Handle window resize to make the chart responsive
             window.addEventListener('resize', function() {{
                 Plotly.relayout('plot', {{
                     'width': document.getElementById('plot').offsetWidth
                 }});
             }});
-        }});
+        }};
     </script>
 </body>
 </html>
@@ -260,7 +325,7 @@ def regression():
 if __name__ == '__main__':
     # Check environment to determine server mode
     env = os.getenv('FLASK_ENV', 'development')
-    
+
     if env == 'production':
         # In production, use gunicorn (this code won't actually run as gunicorn will be started separately)
         print("Running in production mode - use gunicorn")
