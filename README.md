@@ -29,12 +29,13 @@ This project provides a simple HTTP API that performs linear regression on provi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/regression-analysis-api.git
-   cd regression-analysis-api
+   git clone https://github.com/tsawer/regression-analysis-api.git
    ```
 
 2. Create and activate a virtual environment (optional but recommended):
    ```bash
+   cd regression-analysis-api
+   pyenv local 3.13
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
