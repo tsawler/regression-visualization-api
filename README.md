@@ -81,10 +81,10 @@ The API will be available at `http://localhost:8000`.
    
    # OR using Docker Compose directly
    # Development mode
-   FLASK_ENV=development FLASK_CMD="python app.py" docker-compose up --build
+   FLASK_ENV=development FLASK_CMD="python app.py" docker compose up --build
    
    # Production mode
-   FLASK_ENV=production FLASK_CMD="gunicorn --bind 0.0.0.0:8000 app:app --workers=4" docker-compose up --build
+   FLASK_ENV=production FLASK_CMD="gunicorn --bind 0.0.0.0:8000 app:app --workers=4" docker compose up --build
    ```
 
 The API will be available at `http://localhost:8000`.
