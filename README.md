@@ -34,7 +34,7 @@ This project provides a simple HTTP API that performs linear regression on provi
 
 2. Create and activate a virtual environment (optional but recommended):
    ```bash
-   cd regression-analysis-api
+   cd regression-visualization-api
    pyenv local 3.13
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -60,7 +60,7 @@ The API will be available at `http://localhost:8000`.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/regression-analysis-api.git
+   git clone https://github.com/tsawler/regression-visualization-api.git
    cd regression-analysis-api
    ```
 
