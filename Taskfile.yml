@@ -16,7 +16,7 @@ tasks:
     desc: Run Flask application in development mode
     cmds:
       - cp -n .env.example .env || true
-      - docker-compose up --build
+      - docker compose up --build
     env:
       FLASK_ENV: development
       FLASK_CMD: python app.py
@@ -25,7 +25,7 @@ tasks:
     desc: Run Flask application in production mode using Gunicorn
     cmds:
       - cp -n .env.production .env || true
-      - docker-compose up --build
+      - docker compose up --build
     env:
       FLASK_ENV: production
       FLASK_CMD: gunicorn --bind 0.0.0.0:8000 app:app --workers=4
@@ -33,19 +33,19 @@ tasks:
   build:
     desc: Build Docker image
     cmds:
-      - docker-compose build
+      - docker compose build
 
   clean:
     desc: Remove Docker containers, images, and volumes
     cmds:
-      - docker-compose down -v --rmi local
+      - docker compose down -v --rmi local
 
   lint:
     desc: Run linting on Python files
     cmds:
-      - docker-compose run --rm web flake8 .
+      - docker compose run --rm web flake8 .
 
   test:
     desc: Run tests
     cmds:
-      - docker-compose run --rm web pytest
+      - docker compose run --rm web pytest
