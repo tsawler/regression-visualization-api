@@ -29,7 +29,7 @@ This project provides a simple HTTP API that performs linear regression on provi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/tsawler/regression-analysis-api.git
+   git clone https://github.com/tsawler/regression-visualization-api.git
    ```
 
 2. Create and activate a virtual environment (optional but recommended):
